@@ -1,0 +1,89 @@
+## haDASM.nmk - NMAKE Developer script file.
+## (c)2023 by helmut altmann
+
+#------------------------------------------------------------------------------
+# NMake file for the 32bit Windows XP / WIN10 Console-App Project: PROJ.EXE
+#
+#  ------------------------------------------------------------
+# |                  Copyright (c)2023 by ha.                  |
+#  ------------------------------------------------------------
+#                                                                 
+#     ----------------------------------
+#    |  Invocation:  NMAKE haDASM.NMK   |  23.09.2023 ha
+#     ----------------------------------
+#
+#    32bit-Version Build for XP, Vista, Windows 10, ... 
+#    C:\Program Files (x86)\Microsoft Visual Studio\2010\BuildTools: XP SP3
+#     (Microsoft (R) Macro Assembler Version 10.00.30319.01)
+#     Microsoft (R) Macro Assembler Version 14.28.29910.0 <- Better use ML from VS 2019!
+#     Microsoft (R) C/C++-Optimierungscompiler Version 16.00.30319.01 for 80x86 XP
+#     Microsoft (R) Incremental Linker Version 10.00.30319.01
+#     Microsoft (R) Program Maintenance Utility, Version 10.00.30319.01
+#
+# Product:  DASM6805.exe                                                        
+# Module:   PROJ.nmk                                                        
+#
+#------------------------------------------------------------------------------
+
+PROJ = DASM                     # Disassembler
+FOLDER = C:\Temp600\__\         # Folder prefix to the project,
+                                #  using 2010/2019 MS Build-tools.
+# -------------------
+# Global tool options
+# -------------------
+AFLAGS=/nologo /c /Sn /Sg /Sp84 /Fl
+
+#CFLAGS=/c /nologo /Od /Fa$(FOLDER)$(@B).AS
+CFLAGS=/c /nologo /EHsc /Od 
+LFLAGS=/nologo /INCREMENTAL
+
+LIBS= shlwapi.lib
+
+# -----------------------------------------------------------------------------
+#       Macro definitions of the project object module depedencies
+# -----------------------------------------------------------------------------
+OBJECTS68HC05 = $(FOLDER)$(PROJ).obj
+
+CLEAN =  $(FOLDER)*.ilk
+
+#---------------
+# Inference rule
+#---------------
+.asm.obj:
+        @ML $(AFLAGS) /Fo$(FOLDER)$(@B).obj /Fl$(FOLDER)$(@B).lst $(FOLDER)$(@B).asm
+
+.cpp.obj:
+        @CL $(CFLAGS) /Fo$(FOLDER)$(@B).obj $(FOLDER)$(@B).cpp
+
+# -------------------------------------------
+# Pseudo targets pointing to the real targets
+# -------------------------------------------
+_all:   $(FOLDER)DASM6805.exe
+
+
+# -----------------------------------------------------------------------------
+#
+#        For $(PROJ).EXE: List of dependencies for every object file
+#
+$(FOLDER)$(PROJ).obj:   $(FOLDER)$(@B).cpp $(FOLDER)equate.h $(FOLDER)extern.h
+
+
+#------------------------------------------------------------------------------
+#
+#               $(PROJ) Target build (DASM6805)
+#
+$(FOLDER)$(PROJ)6805.exe:       $(OBJECTS68HC05)
+#
+# Detect if "$(@F)" is running. It must be terminated before rebuild.
+# ":" should appear in TASKLIST output only if the task is NOT found,
+# Hence FIND will set the ERRORLEVEL to 0 for 'not found' and 1 for 'found'.
+#
+!IF ([tasklist /NH /FI "IMAGENAME eq $(PROJ)6805.exe" | FIND ":" > nul] == 1)
+        -TASKKILL /F /IM $(@B).exe > nul
+!ENDIF
+        LINK $(LFLAGS) /OUT:$(FOLDER)$(@B).exe $** $(LIBS) >$(FOLDER)$(@B).link
+        DEL $(CLEAN)
+        @ECHO " $(FOLDER)$(@B).exe (32bit) has been built."
+        @ECHO.
+
+# -----------------------------  END OF MAKEFILE  -----------------------------
